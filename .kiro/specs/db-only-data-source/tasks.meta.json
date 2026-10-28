@@ -1,0 +1,86 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Add offline cache write on successful SharePoint load (Tier 1)": [
+      {
+        "executionId": "91659188-4bf2-4677-8819-0cc3c3065013",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024571277
+      },
+      {
+        "executionId": "91659188-4bf2-4677-8819-0cc3c3065013",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024718326
+      }
+    ],
+    "2. Add offline/empty/error state rendering + banner": [
+      {
+        "executionId": "91659188-4bf2-4677-8819-0cc3c3065013",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024726052
+      }
+    ],
+    "4. Repurpose the download button to JSON export": [
+      {
+        "executionId": "91659188-4bf2-4677-8819-0cc3c3065013",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024733879
+      }
+    ],
+    "3. Wire two-tier offline fallback into initData()": [
+      {
+        "executionId": "3f46d9c1-422d-45ff-ad33-a281853c36c9",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024812682
+      },
+      {
+        "executionId": "3f46d9c1-422d-45ff-ad33-a281853c36c9",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024932506
+      }
+    ],
+    "5. Verify safeguards still fire (regression)": [
+      {
+        "executionId": "3f46d9c1-422d-45ff-ad33-a281853c36c9",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024941247
+      },
+      {
+        "executionId": "3f46d9c1-422d-45ff-ad33-a281853c36c9",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793024970949
+      }
+    ],
+    "6. GATE: confirm SharePoint prerequisite before removal": [
+      {
+        "executionId": "0ef49f02-60c2-4b03-aa62-c85006f8fb0d",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793025189674
+      }
+    ],
+    "7. Remove SEED_DATA and make the app DB-only (DESTRUCTIVE, gated)": [
+      {
+        "executionId": "0ef49f02-60c2-4b03-aa62-c85006f8fb0d",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793025197928
+      },
+      {
+        "executionId": "0ef49f02-60c2-4b03-aa62-c85006f8fb0d",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793025308303
+      }
+    ],
+    "8. Post-removal verification + backup": [
+      {
+        "executionId": "0ef49f02-60c2-4b03-aa62-c85006f8fb0d",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793025316359
+      },
+      {
+        "executionId": "0ef49f02-60c2-4b03-aa62-c85006f8fb0d",
+        "chatSessionId": "sess_8f803ffa-a0a0-43ab-b028-27f142bd038e",
+        "timestamp": 1793025397203
+      }
+    ]
+  }
+}

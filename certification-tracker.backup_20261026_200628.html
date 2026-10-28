@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI External Certification Tracker</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e5e8f0;
+    --brand: #4f46e5;
+    --brand-dark: #3d35c7;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --amber: #d97706;
+    --amber-bg: #fef3c7;
+    --gray: #64748b;
+    --gray-bg: #e2e8f0;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --blue: #2563eb;
+    --blue-bg: #dbeafe;
+    --shadow: 0 1px 3px rgba(16,24,40,.08), 0 1px 2px rgba(16,24,40,.06);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+  }
+  /* Top bar */
+  header.topbar {
+    background: linear-gradient(90deg, var(--brand), #6d28d9);
+    color: #fff;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  header.topbar h1 { font-size: 18px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  header.topbar .meta { font-size: 12.5px; opacity: .92; text-align: right; }
+  header.topbar .meta strong { display: block; font-size: 13.5px; }
+
+  .layout { display: flex; min-height: calc(100vh - 52px); }
+  nav.side {
+    width: 230px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    padding: 16px 10px;
+    flex-shrink: 0;
+  }
+  nav.side button {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+  nav.side button:hover { background: #f1f2f9; }
+  nav.side button.active { background: var(--brand); color: #fff; font-weight: 600; }
+  nav.side .navgroup { font-size: 11px; text-transform: uppercase; color: var(--muted); letter-spacing: .6px; padding: 14px 14px 6px; }
+
+  main { flex: 1; padding: 22px 26px; overflow-x: auto; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to {opacity:1; transform:none;} }
+
+  h2.screen-title { font-size: 20px; margin: 0 0 4px; }
+  p.screen-sub { color: var(--muted); margin: 0 0 20px; }
+
+  /* Tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 16px; margin-bottom: 24px; }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+  }
+  .tile .label { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  .tile .value { font-size: 30px; font-weight: 700; margin-top: 8px; }
+  .tile .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .tile.green .value { color: var(--green); }
+  .tile.blue .value { color: var(--blue); }
+  .tile.amber .value { color: var(--amber); }
+  .tile.brand .value { color: var(--brand); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+  }
+  .card h3 { margin: 0 0 16px; font-size: 15px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Bars */
+  .bar-row { margin-bottom: 14px; }
+  .bar-row .bar-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .bar-row .bar-top .cnt { color: var(--muted); }
+  .bar-track { height: 10px; background: #eef0f6; border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; background: var(--brand); transition: width .4s; }
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.amber { background: var(--amber); }
+  .bar-fill.gray { background: var(--gray); }
+  .bar-fill.blue { background: var(--blue); }
+
+  /* Forms */
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 20px; }
+  @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; }
+  .field.full { grid-column: 1 / -1; }
+  label { font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  label .req { color: var(--red); }
+  input, select, textarea {
+    font: inherit;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+  input[readonly] { background: #f3f4f8; color: var(--muted); }
+  textarea { resize: vertical; min-height: 64px; }
+
+  .btn {
+    border: none; border-radius: 8px; padding: 10px 18px; font: inherit; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn.primary { background: var(--brand); color: #fff; }
+  .btn.primary:hover { background: var(--brand-dark); }
+  .btn.ghost { background: #eef0f6; color: var(--ink); }
+  .btn.ghost:hover { background: #e3e6f1; }
+  .btn.success { background: var(--green); color: #fff; }
+  .btn.success:hover { filter: brightness(.95); }
+  .btn.danger-ghost { background: var(--red-bg); color: var(--red); }
+  .btn.sm { padding: 6px 11px; font-size: 12.5px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+  /* Table */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .toolbar input, .toolbar select { padding: 8px 10px; }
+  .toolbar .spacer { flex: 1; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 11px 13px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { background: #fafbff; color: #4b5563; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  tbody tr:hover { background: #fafbff; }
+  td.actions { display: flex; gap: 6px; }
+
+  .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-block; }
+  .badge.Certified { background: var(--green-bg); color: var(--green); }
+  .badge.Planned { background: var(--blue-bg); color: var(--blue); }
+  .badge.YetToPlan { background: var(--gray-bg); color: var(--gray); }
+  .badge.NotPassed { background: var(--red-bg); color: var(--red); }
+  .badge.Rescheduled { background: var(--amber-bg); color: var(--amber); }
+  .badge.NoShow { background: var(--red-bg); color: var(--red); font-weight: 700; }
+
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  .pill-link { background: none; border: none; color: var(--brand); cursor: pointer; font-weight: 600; padding: 0; }
+
+  .note {
+    background: #f0f3ff; border: 1px solid #d9def7; border-radius: 10px;
+    padding: 14px 16px; font-size: 13px; color: #42475a; margin-bottom: 20px;
+  }
+  .note strong { color: var(--brand-dark); }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: #fff;
+    padding: 13px 20px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    opacity: 0; transform: translateY(10px); transition: .25s; z-index: 50; font-weight: 500;
+  }
+  .toast.show { opacity: 1; transform: none; }
+
+  .leaderlist li { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .leaderlist { list-style: none; padding: 0; margin: 0; }
+  .leaderlist li:last-child { border-bottom: none; }
+  .leaderlist .count { font-weight: 700; color: var(--brand); }
+  /* Conflict modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(16,24,40,.45);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px;
+  }
+  .modal-box {
+    background: #fff; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    width: 100%; max-width: 560px; overflow: hidden; animation: fade .18s ease;
+  }
+  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+  .modal-head .ico { font-size: 20px; }
+  .modal-head h3 { margin: 0; font-size: 15px; }
+  .modal-body { padding: 18px 20px; max-height: 60vh; overflow: auto; }
+  .modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; justify-content: flex-end; }
+  .btn.ghost.active-filter { background: var(--brand); color: #fff; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>🎓 AI External Certification Tracker</h1>
+  <div class="meta">
+    <strong id="welcomeName">Welcome</strong>
+    <span>Last updated: <span id="lastUpdated">—</span></span>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="side">
+    <div class="navgroup">Overview</div>
+    <button data-screen="home" class="active">🏠 Home</button>
+    <div class="navgroup">Self Service</div>
+    <button data-screen="entry">➕ Add / Edit Certification</button>
+    <button data-screen="bulk">📤 Bulk Upload</button>
+    <button data-screen="mine">📝 My Certifications</button>
+    <div class="navgroup">Leadership</div>
+    <button data-screen="manager">👨‍💼 Manager View</button>
+    <button data-screen="leadership">📊 Leadership Dashboard</button>
+  </nav>
+
+  <main>
+    <!-- HOME -->
+    <section id="home" class="screen active">
+      <h2 class="screen-title">Home Dashboard</h2>
+      <p class="screen-sub">Organization-wide certification snapshot.</p>
+      <div class="tiles">
+        <div class="tile green"><div class="label">✅ Certified</div><div class="value" id="t-certified">0</div><div class="sub">completed</div></div>
+        <div class="tile blue"><div class="label">📅 Planned</div><div class="value" id="t-planned">0</div><div class="sub">in progress</div></div>
+        <div class="tile amber"><div class="label">⏳ Yet to Plan</div><div class="value" id="t-yet">0</div><div class="sub">not started</div></div>
+        <div class="tile brand"><div class="label">📊 Total Records</div><div class="value" id="t-total">0</div><div class="sub">certification entries</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Status-wise Count</h3><div id="chart-status"></div></div>
+        <div class="card"><h3>Certification-wise Progress</h3><div id="chart-cert"></div></div>
+      </div>
+      <div class="card"><h3>Team / Account-wise Completion %</h3><div id="chart-team"></div></div>
+    </section>
+
+    <!-- ENTRY -->
+    <section id="entry" class="screen">
+      <h2 class="screen-title">Add / Edit Certification</h2>
+      <p class="screen-sub">Resources maintain their own certification records here.</p>
+      <div class="card">
+        <h3>Employee Information</h3>
+        <div class="form-grid">
+          <div class="field"><label>Emp ID <span class="req">*</span></label><input id="f-emp" placeholder="e.g. 123456" /></div>
+          <div class="field"><label>Employee Name <span class="req">*</span></label><input id="f-name" placeholder="Full name" /></div>
+          <div class="field"><label>JL</label><input id="f-jl" placeholder="e.g. 5" /></div>
+          <div class="field"><label>Team / Account</label><input id="f-team" placeholder="e.g. Charter" /></div>
+          <div class="field"><label>Manager / Lead</label><input id="f-mgr" placeholder="Reporting manager" /></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Certification Details</h3>
+        <div class="form-grid">
+          <div class="field"><label>Certification Name <span class="req">*</span></label><select id="f-cert"></select></div>
+          <div class="field"><label>Status <span class="req">*</span></label><select id="f-status"></select></div>
+          <div class="field"><label>Planned Date</label><input type="date" id="f-planned" /></div>
+          <div class="field"><label>Completion Date</label><input type="date" id="f-completion" /></div>
+          <div class="field"><label>Area</label><select id="f-area"></select></div>
+          <div class="field full"><label>Remarks</label><textarea id="f-remarks" placeholder="Any notes, attempt details, reschedule reason..."></textarea></div>
+        </div>
+        <div class="note" style="margin-top:16px;margin-bottom:0;">
+          <strong>Auto-calculated status:</strong> Completion date set → <b>Certified</b>; planned date set (no completion) → <b>Planned</b>; neither → <b>Yet to Plan</b>. You can override the status manually above.
+        </div>
+        <div class="form-actions">
+          <button class="btn primary" id="btn-save">💾 Save</button>
+          <button class="btn success" id="btn-submit">✅ Submit &amp; Add Another</button>
+          <button class="btn ghost" id="btn-reset">↺ Clear</button>
+          <input type="hidden" id="f-editid" />
+        </div>
+      </div>
+    </section>
+
+    <!-- BULK UPLOAD -->
+    <section id="bulk" class="screen">
+      <h2 class="screen-title">Bulk Upload Certifications</h2>
+      <p class="screen-sub">Paste rows straight from Excel, or pick a .csv / .tsv file. Messy data is cleaned automatically and blank fields are filled with smart defaults.</p>
+
+      <div class="note">
+        <strong>Expected columns (in order):</strong> Sl. · Emp# · Name · JL · Account/Team · Manager · AI External Certification · Status · Planned Date · Completion Date · Area · Remarks.
+        A header row is optional — it's auto-detected and skipped. The <b>Sl.</b> column is ignored.
+      </div>
+
+      <div class="card" style="border-color:#bbf7d0;background:#f0fdf4;">
+        <h3>🗄️ SharePoint backend (database) <span style="font-weight:400;color:var(--muted);font-size:12.5px;">— live multi-user store</span></h3>
+        <p class="screen-sub" style="margin-bottom:14px;">When enabled and this page is hosted on your SharePoint site, records load from and save to a SharePoint list instead of the built-in data. Config is stored only in this browser.</p>
+        <div class="form-grid">
+          <div class="field full"><label>Site URL (e.g. https://contoso.sharepoint.com/sites/Team)</label><input id="sp-site" type="text" placeholder="https://yourtenant.sharepoint.com/sites/YourSite" /></div>
+          <div class="field"><label>List name</label><input id="sp-list" type="text" placeholder="AI_External_Certifications" /></div>
+          <div class="field"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="sp-enabled" style="width:auto;" /> Use SharePoint as backend</label></div>
+        </div>
+        <div class="form-actions" style="margin-top:14px;">
+          <button class="btn primary" id="sp-save">💾 Save settings</button>
+          <button class="btn success" id="sp-reload">⬇ Reload from SharePoint</button>
+          <button class="btn ghost" id="sp-test">🔌 Test connection</button>
+        </div>
+        <div id="sp-status" style="margin-top:12px;font-size:12.5px;color:var(--muted);">SharePoint backend is OFF (using built-in data).</div>
+      </div>
+
+      <div class="card" style="border-color:#bfdbfe;background:#f0f7ff;">
+        <h3>☁ Cloud sync (SharePoint via Power Automate) <span style="font-weight:400;color:var(--muted);font-size:12.5px;">— auto-saves your data to a shared location</span></h3>
+        <p class="screen-sub" style="margin-bottom:14px;">Paste the Power Automate <b>HTTP POST URL</b> for your flow. Once set, the tracker auto-pushes all records to SharePoint a few seconds after each change. The URL is stored only in this browser (not in the shared file).</p>
+        <div class="field full">
+          <label>Flow HTTP URL (secret — keep private)</label>
+          <input id="cloud-url" type="password" placeholder="https://prod-XX.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?..." />
+        </div>
+        <div class="field full">
+          <label>Pull URL (GET latest JSON back - optional)</label>
+          <input id="cloud-pull-url" type="text" placeholder="e.g. SharePoint file link, or a GET flow URL that returns the JSON array" />
+        </div>
+        <div class="form-actions" style="margin-top:14px;">
+          <button class="btn primary" id="cloud-save-url">🔑 Save URL</button>
+          <button class="btn ghost" id="cloud-show-url">👁 Show / Hide</button>
+          <button class="btn success" id="cloud-push">☁ Push now</button>
+          <button class="btn primary" id="cloud-pull">⬇ Pull now</button>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px;color:#374151;margin-left:6px;">
+            <input type="checkbox" id="cloud-auto" style="width:auto;" checked /> Auto-push after edits
+          </label>
+        </div>
+        <div id="cloud-status" style="margin-top:12px;font-size:12.5px;color:var(--muted);">Cloud sync not configured.</div>
+      </div>
+
+      <div class="card" style="border-color:#c7d2fe;background:#f5f7ff;">
+        <h3>💾 Save / Load data file <span style="font-weight:400;color:var(--muted);font-size:12.5px;">— use this to share data between people</span></h3>
+        <p class="screen-sub" style="margin-bottom:14px;">Browser storage does not travel with a shared link (and is blocked in the SharePoint preview). Save your data to a JSON file and share that file; others can load it here.</p>
+        <div class="form-actions" style="margin-top:0;">
+          <button class="btn success" id="data-save">💾 Save to JSON file</button>
+          <label class="btn primary" style="cursor:pointer;">
+            📂 Load from JSON file
+            <input type="file" id="data-load" accept=".json,application/json" style="display:none;" />
+          </label>
+          <label class="btn ghost" style="cursor:pointer;">
+            ➕ Merge from JSON file
+            <input type="file" id="data-merge" accept=".json,application/json" style="display:none;" />
+          </label>
+          <button class="btn ghost" id="data-bake">📥 Download data as JSON</button>
+          <button class="btn ghost" id="data-validate">🧹 Validate &amp; Remove Duplicates</button>
+        </div>
+        <div id="data-fileinfo" style="margin-top:12px;font-size:12.5px;color:var(--muted);">No file saved or loaded yet this session.</div>
+      </div>
+
+      <div class="card">
+        <h3>1 · Provide data</h3>
+        <div class="field full">
+          <label>Paste from Excel (tab-separated) or CSV</label>
+          <textarea id="bulk-text" style="min-height:150px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;" placeholder="Paste copied cells here — e.g.&#10;1  34101  Rajesh Selvaraj  6  Charter    Claude Certified Developer - Foundations  Planned  11/6/2026"></textarea>
+        </div>
+        <div class="form-actions" style="margin-top:14px;">
+          <label class="btn ghost" style="cursor:pointer;">
+            📁 Choose file…
+            <input type="file" id="bulk-file" accept=".csv,.tsv,.txt" style="display:none;" />
+          </label>
+          <span id="bulk-filename" style="align-self:center;color:var(--muted);font-size:12.5px;"></span>
+          <div class="spacer" style="flex:1;"></div>
+          <button class="btn primary" id="bulk-preview">🔍 Parse &amp; Preview</button>
+          <button class="btn ghost" id="bulk-clear">↺ Clear</button>
+        </div>
+      </div>
+
+      <div class="card" id="bulk-options-card" style="display:none;">
+        <h3>2 · Blank-field replacement</h3>
+        <p class="screen-sub" style="margin-bottom:14px;">When a cell is empty, fill it with these defaults. Leave a box empty to keep the field blank.</p>
+        <div class="form-grid">
+          <div class="field"><label>Blank JL →</label><input id="def-jl" value="—" /></div>
+          <div class="field"><label>Blank Team / Account →</label><input id="def-team" value="Charter" /></div>
+          <div class="field"><label>Blank Manager / Lead →</label><input id="def-mgr" value="Unassigned" /></div>
+          <div class="field"><label>Blank Area →</label><input id="def-area" value="Other" /></div>
+          <div class="field"><label>Blank Remarks →</label><input id="def-remarks" value="" /></div>
+          <div class="field">
+            <label>Blank dates &amp; invalid (1/0/1900) →</label>
+            <input value="Left empty (status auto-set)" readonly />
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top:14px;">
+          <button class="btn ghost sm" id="bulk-reapply">↻ Re-apply defaults to preview</button>
+        </div>
+      </div>
+
+      <div class="card" id="bulk-preview-card" style="display:none;">
+        <h3>3 · Preview &amp; import <span id="bulk-count" style="font-weight:400;color:var(--muted);"></span></h3>
+        <div id="bulk-warnings"></div>
+        <div class="table-wrap" style="max-height:420px;overflow:auto;">
+          <table>
+            <thead><tr><th>#</th><th>Emp#</th><th>Name</th><th>JL</th><th>Team</th><th>Certification</th><th>Status</th><th>Planned</th><th>Completion</th><th>Area</th><th>Remarks</th></tr></thead>
+            <tbody id="bulk-body"></tbody>
+          </table>
+        </div>
+        <div class="form-actions" style="margin-top:16px;">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:12.5px;color:#374151;">
+            <input type="checkbox" id="bulk-replace" style="width:auto;" /> Replace all existing records (instead of appending)
+          </label>
+          <div class="spacer" style="flex:1;"></div>
+          <button class="btn success" id="bulk-import">✅ Import <span id="bulk-import-n"></span> records</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MINE -->
+    <section id="mine" class="screen">
+      <h2 class="screen-title">My Certifications</h2>
+      <p class="screen-sub">Filter to your Emp ID to see only your records.</p>
+      <div class="toolbar">
+        <input id="mine-emp" placeholder="Enter your Emp ID to filter" />
+        <button class="btn ghost sm" id="mine-filter">🔍 Show</button>
+        <button class="btn ghost sm" id="mine-clear">Show all</button>
+        <div class="spacer"></div>
+        <button class="btn primary sm" data-goto="entry">➕ Add Certification</button>
+      </div>
+      <div id="mine-status" style="font-size:12.5px;color:var(--muted);margin:-6px 0 14px;">Showing all records.</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Emp#</th><th>Name</th><th>Certification</th><th>Status</th><th>Planned</th><th>Completion</th><th>Area</th><th>Remarks</th><th>Actions</th></tr></thead>
+          <tbody id="mine-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MANAGER -->
+    <section id="manager" class="screen">
+      <h2 class="screen-title">Manager View</h2>
+      <p class="screen-sub">Team-level tracking and follow-ups.</p>
+      <div class="tiles">
+        <div class="tile brand"><div class="label">👥 Employees</div><div class="value" id="m-emp">0</div></div>
+        <div class="tile green"><div class="label">✅ Certified</div><div class="value" id="m-cert">0</div></div>
+        <div class="tile blue"><div class="label">📅 Planned</div><div class="value" id="m-plan">0</div></div>
+        <div class="tile amber"><div class="label">⏳ Yet to Plan</div><div class="value" id="m-yet">0</div></div>
+      </div>
+      <div class="toolbar">
+        <input id="mgr-search" placeholder="🔍 Search name / emp / remarks" />
+        <select id="mgr-team"><option value="">All Teams</option></select>
+        <select id="mgr-jl"><option value="">All JL</option></select>
+        <select id="mgr-status"><option value="">All Status</option></select>
+        <select id="mgr-cert"><option value="">All Certifications</option></select>
+        <div class="spacer"></div>
+        <button class="btn success sm" id="mgr-export">⬇ Export to Excel</button>
+        <button class="btn ghost sm" id="mgr-remind">✉ Send Reminder</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Emp#</th><th>Name</th><th>JL</th><th>Team</th><th>Certification</th><th>Status</th><th>Planned</th><th>Completion</th><th>Area</th><th>Actions</th></tr></thead>
+          <tbody id="mgr-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LEADERSHIP -->
+    <section id="leadership" class="screen">
+      <h2 class="screen-title">Leadership Dashboard</h2>
+      <p class="screen-sub">Executive KPIs across all teams.</p>
+      <div class="tiles">
+        <div class="tile brand"><div class="label">👥 Total Employees</div><div class="value" id="l-emp">0</div></div>
+        <div class="tile brand"><div class="label">📜 Total Certifications</div><div class="value" id="l-total">0</div></div>
+        <div class="tile green"><div class="label">Certified %</div><div class="value" id="l-cert">0%</div></div>
+        <div class="tile blue"><div class="label">Planned %</div><div class="value" id="l-plan">0%</div></div>
+        <div class="tile amber"><div class="label">Yet to Plan %</div><div class="value" id="l-yet">0%</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>Team-wise Adoption</h3><div id="l-chart-team"></div></div>
+        <div class="card"><h3>Certification Mix</h3><div id="l-chart-cert"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><h3>🏆 Top Certified Employees</h3><ul class="leaderlist" id="l-top"></ul></div>
+        <div class="card"><h3>⚠ Pending Certifications</h3><ul class="leaderlist" id="l-pending"></ul></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="conflict-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="ico">⚠️</span><h3 id="conflict-title">Conflict</h3></div>
+    <div class="modal-body" id="conflict-body"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="conflict-keep">Keep Existing</button>
+      <button class="btn primary" id="conflict-replace">Replace with New</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Config ---------- */
+const CERTIFICATIONS = [
+  "Claude Certified Associate – Foundations",
+  "Claude Certified Developer – Foundations",
+  "Claude Certified Architect – Foundations",
+  "Claude Certified Architect – Professional",
+  "Amazon AI Practitioner",
+  "AWS Agentic AI Essentials",
+  "OCI AI Foundation",
+  "GitHub Copilot",
+  "Salesforce AI Associate",
+  "Other"
+];
+const STATUSES = ["Yet to Plan", "Planned", "Certified", "Not Passed", "Rescheduled", "No Show"];
+
+/* ====================================================================
+   SHAREPOINT BACKEND (data layer)
+   Works when this page is hosted on the SharePoint site (uses the
+   logged-in user's session + form digest). When SharePoint is not reachable
+   it falls back to a localStorage cache, then a JSON backup (no built-in data).
+   Configure the site URL + list name in the SharePoint card (stored
+   locally in the browser) or hard-code SP_DEFAULTS below.
+   ==================================================================== */
+const SP_CFG_KEY = "ai_cert_sp_cfg_v1";
+const SP_DEFAULTS = { enabled: false, site: "", list: "AI_External_Certifications" };
+let spCfg = loadSpCfg();
+function loadSpCfg() {
+  try { return Object.assign({}, SP_DEFAULTS, JSON.parse(localStorage.getItem(SP_CFG_KEY) || "{}")); }
+  catch { return Object.assign({}, SP_DEFAULTS); }
+}
+function saveSpCfg() { try { localStorage.setItem(SP_CFG_KEY, JSON.stringify(spCfg)); } catch {} }
+function spBase() { return (spCfg.site || "").replace(/\/+$/, ""); }
+function spListUrl() { return spBase() + "/_api/web/lists/getbytitle('" + encodeURIComponent(spCfg.list) + "')"; }
+
+// Map SharePoint list item <-> app record.
+function spItemToRecord(it) {
+  return {
+    id: "sp" + it.Id, spId: it.Id,
+    emp: it.EmpID || "", name: it.EmployeeName || "", jl: it.JL || "",
+    team: it.Team || "", mgr: it.Manager || "", cert: it.CertificationName || "",
+    status: it.Status || "Yet to Plan",
+    planned: it.PlannedDate ? String(it.PlannedDate).slice(0,10) : "",
+    completion: it.CompletionDate ? String(it.CompletionDate).slice(0,10) : "",
+    area: it.Area || "", remarks: it.Remarks || ""
+  };
+}
+function recordToSpItem(r) {
+  const body = {
+    Title: (r.emp || "") + " - " + (r.cert || ""),
+    EmpID: r.emp || "", EmployeeName: r.name || "", JL: r.jl || "",
+    Team: r.team || "", Manager: r.mgr || "", CertificationName: r.cert || "",
+    Status: r.status || "Yet to Plan", Area: r.area || "", Remarks: r.remarks || ""
+  };
+  body.PlannedDate = r.planned ? r.planned : null;
+  body.CompletionDate = r.completion ? r.completion : null;
+  return body;
+}
+
+async function spGetDigest() {
+  const res = await fetch(spBase() + "/_api/contextinfo", {
+    method: "POST",
+    headers: { "Accept": "application/json;odata=verbose" },
+    credentials: "same-origin"
+  });
+  if (!res.ok) throw new Error("digest HTTP " + res.status);
+  const j = await res.json();
+  return j.d.GetContextWebInformation.FormDigestValue;
+}
+async function spGetAll() {
+  // pull all items (handle paging via __next)
+  let url = spListUrl() + "/items?$top=5000&$select=Id,EmpID,EmployeeName,JL,Team,Manager,CertificationName,Status,PlannedDate,CompletionDate,Area,Remarks";
+  const out = [];
+  while (url) {
+    const res = await fetch(url, { headers: { "Accept": "application/json;odata=verbose" }, credentials: "same-origin" });
+    if (!res.ok) throw new Error("getAll HTTP " + res.status);
+    const j = await res.json();
+    (j.d.results || []).forEach(it => out.push(spItemToRecord(it)));
+    url = j.d.__next || "";
+  }
+  return out;
+}
+async function spCreate(r) {
+  const digest = await spGetDigest();
+  const res = await fetch(spListUrl() + "/items", {
+    method: "POST",
+    headers: { "Accept": "application/json;odata=verbose", "Content-Type": "application/json;odata=verbose", "X-RequestDigest": digest },
+    credentials: "same-origin",
+    body: JSON.stringify(recordToSpItem(r))
+  });
+  if (!res.ok) throw new Error("create HTTP " + res.status);
+  const j = await res.json();
+  return j.d.Id;
+}
+async function spUpdate(r) {
+  if (!r.spId) return spCreate(r);
+  const digest = await spGetDigest();
+  const res = await fetch(spListUrl() + "/items(" + r.spId + ")", {
+    method: "POST",
+    headers: { "Accept": "application/json;odata=verbose", "Content-Type": "application/json;odata=verbose",
+               "X-RequestDigest": digest, "IF-MATCH": "*", "X-HTTP-Method": "MERGE" },
+    credentials: "same-origin",
+    body: JSON.stringify(recordToSpItem(r))
+  });
+  if (!res.ok) throw new Error("update HTTP " + res.status);
+}
+async function spDelete(spId) {
+  if (!spId) return;
+  const digest = await spGetDigest();
+  const res = await fetch(spListUrl() + "/items(" + spId + ")", {
+    method: "POST",
+    headers: { "X-RequestDigest": digest, "IF-MATCH": "*", "X-HTTP-Method": "DELETE" },
+    credentials: "same-origin"
+  });
+  if (!res.ok) throw new Error("delete HTTP " + res.status);
+}
+function spEnabled() { return !!(spCfg.enabled && spCfg.site && spCfg.list); }
+
+const AREAS = ["Architecture", "ECF", "Framework", "MIS", "NBOP", "NPM", "PromoEngine", "CMS", "OMS", "OFS", "Scrum Master", "L2 Support", "Other", "Mobile Architecture", "MQE", "Product Engine UI", "ProductEngine", "Pandora", "PCAT", "SM360"];
+const STORAGE_KEY = "ai_cert_tracker_v1";
+
+const badgeClass = s => ({
+  "Certified":"Certified","Planned":"Planned","Yet to Plan":"YetToPlan",
+  "Not Passed":"NotPassed","Rescheduled":"Rescheduled","No Show":"NoShow"
+}[s] || "YetToPlan");
+
+/* ---------- State ---------- */
+let records = [];
+
+function storageAvailable() {
+  try {
+    const k = "__t";
+    localStorage.setItem(k, "1"); localStorage.removeItem(k);
+    return true;
+  } catch { return false; }
+}
+function loadCache() {
+  // DB-only: read any cached snapshot from a previous live load. Never seeds.
+  const cached = readCache();
+  records = Array.isArray(cached) ? cached : [];
+  if (!storageAvailable()) showStorageBanner();
+}
+async function initData() {
+  // DB-first. When SharePoint is enabled, it is the source of truth; on failure
+  // we fall back to Tier 1 (localStorage cache) then Tier 2 (JSON backup).
+  // When SharePoint is NOT configured we currently use the built-in data
+  // (pre-gate default). Task 7 removes that default to make the app DB-only.
+  if (spEnabled()) {
+    await initFromSharePoint();
+    return;
+  }
+  // NOT CONFIGURED (DB-only): no built-in data. Show cache if present, else empty + guidance.
+  const cached = readCache();
+  if (cached && cached.length) {
+    records = cached;
+    showOfflineBanner("No data backend configured - showing cached data (not live). Connect SharePoint in the SharePoint card.");
+  } else {
+    records = [];
+    showOfflineBanner("No data backend configured. Open the SharePoint card to connect, or use Load from JSON file.");
+  }
+  setSpStatus("SharePoint backend is OFF. Connect it in the SharePoint card to load live data.", null);
+  renderAll();
+}
+
+async function initFromSharePoint() {
+  try {
+    const rows = await spGetAll();
+    records = rows;
+    cacheRecords();                 // Tier 1: cache this live snapshot
+    clearOfflineBanner();
+    setSpStatus("Connected - loaded " + rows.length + " record(s) from SharePoint.", "ok");
+    renderAll();
+  } catch (e) {
+    const reason = (e && e.message ? e.message : e);
+    const cached = readCache();     // Tier 1 fallback
+    if (cached && cached.length) {
+      records = cached;
+      showOfflineBanner("Offline - showing cached data (not live). " + cached.length + " record(s).");
+      setSpStatus("SharePoint load failed (" + reason + "). Showing cached data.", "err");
+      renderAll();
+      return;
+    }
+    // Tier 2 fallback: no cache -> prompt JSON restore. Keep a non-blank screen.
+    records = [];
+    showOfflineBanner("Offline and no cached data. Use Load from JSON file (Save/Load card) to restore a backup.");
+    setSpStatus("SharePoint load failed (" + reason + "). No cache - load a JSON backup.", "err");
+    renderAll();
+  }
+}
+
+/* ---- Offline cache + banner helpers (Tasks 1-3) ---- */
+function cacheRecords() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
+}
+function readCache() {
+  try { const v = JSON.parse(localStorage.getItem(STORAGE_KEY)); return Array.isArray(v) ? v : null; }
+  catch { return null; }
+}
+let _offlineBannerEl = null;
+function showOfflineBanner(msg) {
+  if (!_offlineBannerEl) {
+    _offlineBannerEl = document.createElement("div");
+    _offlineBannerEl.id = "offlineBanner";
+    _offlineBannerEl.style.cssText = "background:#fef3c7;border-bottom:1px solid #fde68a;color:#92400e;padding:9px 18px;font-size:12.5px;text-align:center;";
+    document.body.insertBefore(_offlineBannerEl, document.body.firstChild);
+  }
+  _offlineBannerEl.innerHTML = msg + ' <button class="btn ghost sm" style="margin-left:10px;padding:2px 8px;" onclick="spReloadFromServer()">Reload live</button>';
+}
+function clearOfflineBanner() {
+  if (_offlineBannerEl) { _offlineBannerEl.remove(); _offlineBannerEl = null; }
+}
+function setSpStatus(msg, kind) {
+  const el = document.getElementById("sp-status");
+  if (!el) return;
+  el.style.color = kind === "err" ? "var(--red)" : kind === "ok" ? "var(--green)" : "var(--muted)";
+  el.textContent = msg;
+}
+async function spReloadFromServer() {
+  if (!spEnabled()) { setSpStatus("Enable SharePoint and set Site URL first.", "err"); return; }
+  try {
+    const rows = await spGetAll();
+    records = rows;
+    cacheRecords();
+    clearOfflineBanner();
+    renderAll();
+    setSpStatus("Reloaded " + rows.length + " record(s) from SharePoint · " + new Date().toLocaleString(), "ok");
+  } catch (e) {
+    setSpStatus("Reload failed: " + (e && e.message ? e.message : e), "err");
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch (e) {
+    // localStorage blocked (e.g. SharePoint preview). Keep data in memory;
+    // the user must use "Save to JSON file" to persist.
+    showStorageBanner();
+  }
+  const el = document.getElementById("lastUpdated");
+  if (el) el.textContent = new Date().toLocaleString();
+  autoPushCloud();
+}
+
+/* ---- Cloud sync via Power Automate HTTP trigger ---- */
+const CLOUD_URL_KEY = "ai_cert_cloud_url_v1";
+let _cloudTimer = null;
+
+function getCloudUrl() {
+  try { return localStorage.getItem(CLOUD_URL_KEY) || ""; } catch { return ""; }
+}
+function setCloudStatus(msg, kind) {
+  const el = document.getElementById("cloud-status");
+  if (!el) return;
+  const color = kind === "err" ? "var(--red)" : kind === "ok" ? "var(--green)" : "var(--muted)";
+  el.style.color = color;
+  el.innerHTML = msg;
+}
+function autoPushCloud() {
+  // Debounced push: collapse bursts of saves into one request ~3s after the last.
+  const chk = document.getElementById("cloud-auto");
+  if (chk && !chk.checked) return;
+  if (!getCloudUrl()) return;
+  clearTimeout(_cloudTimer);
+  _cloudTimer = setTimeout(() => pushToCloud(true), 3000);
+}
+async function pushToCloud(isAuto) {
+  const url = getCloudUrl();
+  if (!url) { setCloudStatus("No Flow URL set - paste it above and Save URL.", "err"); return; }
+  setCloudStatus((isAuto ? "Auto-" : "") + "pushing " + records.length + " record(s)...");
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(records)
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    setCloudStatus("Pushed " + records.length + " record(s) - " + new Date().toLocaleString(), "ok");
+  } catch (e) {
+    setCloudStatus("Push failed: " + (e && e.message ? e.message : e) +
+      ". Check the Flow URL / CORS. Your data is still saved locally and to JSON file.", "err");
+  }
+}
+
+const CLOUD_PULL_KEY = "ai_cert_cloud_pull_url_v1";
+function getPullUrl() {
+  try { return localStorage.getItem(CLOUD_PULL_KEY) || ""; } catch { return ""; }
+}
+async function pullFromCloud() {
+  const url = getPullUrl();
+  if (!url) { setCloudStatus("No Pull URL set - paste it above and Save URL.", "err"); return; }
+  if (!confirm("Pull will REPLACE all current records with the cloud copy. Continue?")) return;
+  setCloudStatus("Pulling latest from cloud...");
+  try {
+    const res = await fetch(url, { method: "GET" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const incoming = await res.json();
+    if (!Array.isArray(incoming)) throw new Error("Cloud JSON is not an array of records");
+    records = incoming.map(r => ({
+      id: r.id || uid(),
+      emp: r.emp || "", name: r.name || "", jl: r.jl || "", team: r.team || "",
+      mgr: r.mgr || "", cert: r.cert || "", status: r.status || "Yet to Plan",
+      planned: r.planned || "", completion: r.completion || "", area: r.area || "", remarks: r.remarks || ""
+    }));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
+    renderAll();
+    const el = document.getElementById("lastUpdated"); if (el) el.textContent = new Date().toLocaleString();
+    setCloudStatus("Pulled " + records.length + " record(s) - " + new Date().toLocaleString(), "ok");
+  } catch (e) {
+    setCloudStatus("Pull failed: " + (e && e.message ? e.message : e) +
+      ". Check the Pull URL / CORS (the file may need to return raw JSON).", "err");
+  }
+}
+
+/* ---- Export current records as JSON (Task 4; repurposed download button) ---- */
+function exportRecordsJson() {
+  const fields = ["id","emp","name","jl","team","mgr","cert","status","planned","completion","area","remarks"];
+  const clean = records.map(r => { const o = {}; fields.forEach(k => o[k] = r[k] == null ? "" : r[k]); return o; });
+  const blob = new Blob([JSON.stringify(clean, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "AI_Certifications_" + new Date().toISOString().slice(0,10) + ".json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+  toast("Exported " + clean.length + " record(s) as JSON.");
+  setFileInfo("export", link.download, clean.length);
+}
+
+
+/* ---- File-based persistence (works even when localStorage is blocked) ---- */
+const FILEINFO_KEY = "ai_cert_fileinfo_v1";
+function setFileInfo(action, name, count) {
+  const info = { action, name, count, when: new Date().toISOString() };
+  try { localStorage.setItem(FILEINFO_KEY, JSON.stringify(info)); } catch {}
+  renderFileInfo(info);
+}
+function renderFileInfo(info) {
+  const el = document.getElementById("data-fileinfo");
+  if (!el) return;
+  if (!info) {
+    try { info = JSON.parse(localStorage.getItem(FILEINFO_KEY)); } catch { info = null; }
+  }
+  if (!info) { el.textContent = "No file saved or loaded yet this session."; return; }
+  const dt = new Date(info.when);
+  const stamp = isNaN(dt) ? info.when : dt.toLocaleString();
+  const verb = { save:"Saved to", load:"Loaded from", merge:"Merged from", bake:"Baked into" }[info.action] || info.action;
+  el.innerHTML = `\u{1F4C4} <b>${verb}</b> <code>${info.name || "file"}</code> &middot; ${info.count} record(s) &middot; ${stamp}`;
+}
+
+function saveToFile() {
+  const data = JSON.stringify(records, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  const fname = "certifications-" + new Date().toISOString().slice(0,10) + ".json";
+  link.download = fname;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  setFileInfo("save", fname, records.length);
+  toast("Saved " + records.length + " record(s) to JSON file");
+}
+
+function loadFromFile(file, { replace = true } = {}) {
+  const reader = new FileReader();
+  const fname = file && file.name ? file.name : "file";
+  reader.onload = async ev => {
+    let incoming;
+    try { incoming = JSON.parse(ev.target.result); }
+    catch { toast("Not a valid JSON file"); return; }
+    if (!Array.isArray(incoming)) { toast("JSON must be an array of records"); return; }
+    // normalize: ensure each record has an id and the expected fields
+    const clean = incoming.map(r => ({
+      id: r.id || uid(),
+      emp: r.emp || "", name: r.name || "", jl: r.jl || "", team: r.team || "",
+      mgr: r.mgr || "", cert: r.cert || "", status: r.status || "Yet to Plan",
+      planned: r.planned || "", completion: r.completion || "", area: r.area || "", remarks: r.remarks || ""
+    }));
+    if (replace) {
+      records = clean;
+      save(); renderAll();
+      setFileInfo("load", fname, records.length);
+      toast("Loaded " + clean.length + " record(s) from file");
+    } else {
+      const { merged, added, updated, kept } = await mergeNoDuplicates(records, clean);
+      records = merged;
+      save(); renderAll();
+      setFileInfo("merge", fname, records.length);
+      toast("Merged file: " + added + " added, " + updated + " updated" + (kept ? ", " + kept + " kept existing" : "") + " (no duplicates)");
+    }
+  };
+  reader.readAsText(file);
+}
+
+let _storageBannerShown = false;
+function showStorageBanner() {
+  if (_storageBannerShown) return;
+  _storageBannerShown = true;
+  const bar = document.createElement("div");
+  bar.id = "storageBanner";
+  bar.style.cssText = "background:#fef3c7;border-bottom:1px solid #fde68a;color:#92400e;padding:9px 18px;font-size:12.5px;text-align:center;";
+  bar.innerHTML = "Browser storage is unavailable here (e.g. SharePoint preview). Your changes are kept only in this tab \u2014 use <b>Save to JSON file</b> to keep them, and <b>Load from JSON file</b> to restore.";
+  document.body.insertBefore(bar, document.body.firstChild);
+}
+
+// Two records with the same dupKey CONFLICT if their status or dates differ.
+function isConflict(a, b) {
+  return (a.status || "") !== (b.status || "") ||
+         (a.planned || "") !== (b.planned || "") ||
+         (a.completion || "") !== (b.completion || "");
+}
+// Ask the user which version wins via a styled modal.
+// Returns a Promise: resolves true = REPLACE with incoming, false = KEEP existing.
+function askConflict(existing, incoming) {
+  return new Promise(resolve => {
+    const esc = s => (s == null ? "" : String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const cell = v => v ? esc(v) : '<span style="color:#9aa0ad">\u2014</span>';
+    const diff = (a, b) => (a || "") !== (b || "") ? ' style="background:#fff7ed"' : '';
+    const ov = document.getElementById("conflict-modal");
+    const body = document.getElementById("conflict-body");
+    document.getElementById("conflict-title").textContent =
+      "Conflict: Emp " + (incoming.emp || existing.emp) + " \u2014 " + (incoming.cert || existing.cert);
+    body.innerHTML =
+      '<p style="margin:0 0 14px;color:#4b5563;font-size:13px;">This certification already exists with <b>different details</b>. Which version is correct?</p>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+      '<thead><tr>' +
+      '<th style="text-align:left;padding:8px 10px;border-bottom:1px solid #e5e8f0;color:#6b7280;font-size:11px;text-transform:uppercase;">Field</th>' +
+      '<th style="text-align:left;padding:8px 10px;border-bottom:1px solid #e5e8f0;color:#6b7280;font-size:11px;text-transform:uppercase;">Existing</th>' +
+      '<th style="text-align:left;padding:8px 10px;border-bottom:1px solid #e5e8f0;color:#6b7280;font-size:11px;text-transform:uppercase;">New</th>' +
+      '</tr></thead><tbody>' +
+      ['status','planned','completion','area','remarks'].map(k => {
+        const label = { status:"Status", planned:"Planned", completion:"Completion", area:"Area", remarks:"Remarks" }[k];
+        return '<tr>' +
+          '<td style="padding:8px 10px;border-bottom:1px solid #f1f2f9;font-weight:600;color:#374151;">' + label + '</td>' +
+          '<td' + diff(existing[k], incoming[k]) + ' style="padding:8px 10px;border-bottom:1px solid #f1f2f9;">' + cell(existing[k]) + '</td>' +
+          '<td' + diff(existing[k], incoming[k]) + ' style="padding:8px 10px;border-bottom:1px solid #f1f2f9;">' + cell(incoming[k]) + '</td>' +
+          '</tr>';
+      }).join('') +
+      '</tbody></table>';
+    ov.style.display = "flex";
+    const keepBtn = document.getElementById("conflict-keep");
+    const replaceBtn = document.getElementById("conflict-replace");
+    function cleanup(result) {
+      ov.style.display = "none";
+      keepBtn.removeEventListener("click", onKeep);
+      replaceBtn.removeEventListener("click", onReplace);
+      document.removeEventListener("keydown", onKey);
+      ov.removeEventListener("click", onBackdrop);
+      resolve(result);
+    }
+    function onKeep() { cleanup(false); }      // Esc / click-outside / Keep = keep existing
+    function onReplace() { cleanup(true); }
+    function onKey(e) { if (e.key === "Escape") onKeep(); }
+    function onBackdrop(e) { if (e.target === ov) onKeep(); }
+    keepBtn.addEventListener("click", onKeep);
+    replaceBtn.addEventListener("click", onReplace);
+    document.addEventListener("keydown", onKey);
+    ov.addEventListener("click", onBackdrop);
+  });
+}
+
+// Duplicate key: same employee + same certification (case-insensitive, trimmed).
+function dupKey(r) {
+  return ((r.emp || "").trim().toLowerCase()) + "||" + ((r.cert || "").trim().toLowerCase());
+}
+// Merge incoming records into existing, updating matches instead of appending duplicates.
+// Returns { merged, added, updated }.
+async function mergeNoDuplicates(existing, incoming) {
+  const byKey = new Map();
+  existing.forEach(r => byKey.set(dupKey(r), r));
+  let added = 0, updated = 0;
+  let kept = 0;
+  for (const inc of incoming) {
+    const k = dupKey(inc);
+    if (byKey.has(k)) {
+      const cur = byKey.get(k);
+      if (isConflict(cur, inc)) {
+        // Same person + same cert, but different status/dates: ask which is correct.
+        const useNew = await askConflict(cur, inc);
+        if (useNew) { Object.assign(cur, inc, { id: cur.id }); updated++; }
+        else { kept++; }
+      } else {
+        // identical (or incoming adds nothing new): silent update, no prompt
+        Object.assign(cur, inc, { id: cur.id });
+        updated++;
+      }
+    } else {
+      byKey.set(k, inc);
+      added++;
+    }
+  }
+  return { merged: Array.from(byKey.values()), added, updated, kept };
+}
+// Scan the EXISTING dataset for Emp+Certification duplicates and keep a single record each.
+// Identical duplicates collapse silently; differing ones prompt via the conflict modal.
+async function validateDuplicates() {
+  const byKey = new Map();   // key -> kept record
+  const order = [];          // preserve first-seen order
+  let examined = 0, autoMerged = 0, promptedKept = 0, promptedReplaced = 0, removed = 0;
+
+  // Work on a copy so we can rebuild records cleanly.
+  const src = records.slice();
+  for (const r of src) {
+    const k = dupKey(r);
+    if (!byKey.has(k)) {
+      byKey.set(k, r);
+      order.push(k);
+    } else {
+      examined++;
+      const cur = byKey.get(k);
+      if (isConflict(cur, r)) {
+        // Different details: ask which is correct.
+        const useNew = await askConflict(cur, r);
+        if (useNew) { Object.assign(cur, r, { id: cur.id }); promptedReplaced++; }
+        else { promptedKept++; }
+      } else {
+        // Identical: keep the first, drop this one.
+        autoMerged++;
+      }
+      removed++;
+    }
+  }
+
+  if (!examined) { toast("No duplicates found. Data is clean."); return; }
+
+  records = order.map(k => byKey.get(k));
+  save();
+  renderAll();
+  toast("Validated: removed " + removed + " duplicate(s). " +
+    autoMerged + " identical, " + promptedReplaced + " replaced, " + promptedKept + " kept. " +
+    records.length + " record(s) remain.");
+}
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+/* ---------- Helpers ---------- */
+function fmtDate(d) {
+  if (!d) return "—";
+  const dt = new Date(d + "T00:00:00");
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" });
+}
+function autoStatus(planned, completion, current) {
+  if (current === "Not Passed" || current === "Rescheduled" || current === "No Show") return current; // respect explicit terminal states
+  if (completion) return "Certified";
+  if (planned) return "Planned";
+  return "Yet to Plan";
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function fillSelect(el, items, placeholder) {
+  el.innerHTML = (placeholder ? `<option value="">${placeholder}</option>` : "") +
+    items.map(i => `<option>${i}</option>`).join("");
+}
+const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Navigation ---------- */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  document.querySelectorAll("nav.side button").forEach(b => b.classList.toggle("active", b.dataset.screen === id));
+  renderAll();
+}
+document.querySelectorAll("nav.side button").forEach(b =>
+  b.addEventListener("click", () => showScreen(b.dataset.screen)));
+document.querySelectorAll("[data-goto]").forEach(b =>
+  b.addEventListener("click", () => showScreen(b.dataset.goto)));
+
+/* ---------- Form ---------- */
+function resetForm() {
+  ["f-emp","f-name","f-jl","f-team","f-mgr","f-planned","f-completion","f-remarks","f-editid"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("f-cert").selectedIndex = 0;
+  document.getElementById("f-status").value = "Yet to Plan";
+  document.getElementById("f-area").selectedIndex = 0;
+}
+function collectForm() {
+  return {
+    emp: document.getElementById("f-emp").value.trim(),
+    name: document.getElementById("f-name").value.trim(),
+    jl: document.getElementById("f-jl").value.trim(),
+    team: document.getElementById("f-team").value.trim(),
+    mgr: document.getElementById("f-mgr").value.trim(),
+    cert: document.getElementById("f-cert").value,
+    status: document.getElementById("f-status").value,
+    planned: document.getElementById("f-planned").value,
+    completion: document.getElementById("f-completion").value,
+    area: document.getElementById("f-area").value,
+    remarks: document.getElementById("f-remarks").value.trim(),
+  };
+}
+async function saveRecord(addAnother) {
+  const data = collectForm();
+  if (!data.emp || !data.name || !data.cert) {
+    toast("⚠ Emp ID, Name and Certification are required");
+    return;
+  }
+  data.status = autoStatus(data.planned, data.completion, data.status);
+  const editId = document.getElementById("f-editid").value;
+
+  // Conflict check: another record with the SAME Emp + Certification but DIFFERENT status/dates.
+  const twin = records.find(r => r.id !== editId && dupKey(r) === dupKey(data));
+  let touched = null;
+  if (twin) {
+    if (isConflict(twin, data)) {
+      // Ask which is correct. OK = use the new values (update the twin); Cancel = keep existing.
+      if (await askConflict(twin, data)) {
+        Object.assign(twin, data, { id: twin.id });
+        // If we were editing a different row, remove it so we don't leave a duplicate.
+        if (editId && editId !== twin.id) {
+          const di = records.findIndex(r => r.id === editId);
+          if (di > -1) records.splice(di, 1);
+        }
+        touched = twin;
+        toast("✅ Updated existing record with new values");
+      } else {
+        toast("Kept existing record. Your change was discarded.");
+        resetForm();
+        if (!addAnother) showScreen("mine");
+        renderAll();
+        return;
+      }
+    } else {
+      // Same key, identical details already present -> avoid creating a duplicate.
+      if (!editId) {
+        toast("This certification is already recorded (no duplicate added).");
+        resetForm();
+        if (!addAnother) showScreen("mine");
+        renderAll();
+        return;
+      }
+      const i = records.findIndex(r => r.id === editId);
+      if (i > -1) { records[i] = { ...records[i], ...data }; touched = records[i]; }
+    }
+  } else if (editId) {
+    const i = records.findIndex(r => r.id === editId);
+    if (i > -1) { records[i] = { ...records[i], ...data }; touched = records[i]; }
+    toast("✅ Record updated");
+  } else {
+    const nr = { id: uid(), ...data };
+    records.push(nr); touched = nr;
+    toast("✅ Certification saved");
+  }
+  save();
+  if (spEnabled() && touched) {
+    const t = touched;
+    (t.spId ? spUpdate(t) : spCreate(t).then(newId => { t.spId = newId; t.id = "sp" + newId; save(); }))
+      .catch(e => toast("SharePoint save failed: " + (e && e.message ? e.message : e)));
+  }
+  if (addAnother) {
+    const keep = { emp:data.emp, name:data.name, jl:data.jl, team:data.team, mgr:data.mgr };
+    resetForm();
+    document.getElementById("f-emp").value = keep.emp;
+    document.getElementById("f-name").value = keep.name;
+    document.getElementById("f-jl").value = keep.jl;
+    document.getElementById("f-team").value = keep.team;
+    document.getElementById("f-mgr").value = keep.mgr;
+  } else {
+    resetForm();
+    showScreen("mine");
+  }
+  renderAll();
+}
+document.getElementById("btn-save").addEventListener("click", () => saveRecord(false));
+document.getElementById("btn-submit").addEventListener("click", () => saveRecord(true));
+document.getElementById("btn-reset").addEventListener("click", resetForm);
+
+// auto-sync status when dates change
+["f-planned","f-completion"].forEach(id =>
+  document.getElementById(id).addEventListener("change", () => {
+    const s = document.getElementById("f-status");
+    s.value = autoStatus(document.getElementById("f-planned").value, document.getElementById("f-completion").value, s.value);
+  }));
+
+function editRecord(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById("f-emp").value = r.emp;
+  document.getElementById("f-name").value = r.name;
+  document.getElementById("f-jl").value = r.jl;
+  document.getElementById("f-team").value = r.team;
+  document.getElementById("f-mgr").value = r.mgr;
+  document.getElementById("f-cert").value = r.cert;
+  document.getElementById("f-status").value = r.status;
+  document.getElementById("f-planned").value = r.planned || "";
+  document.getElementById("f-completion").value = r.completion || "";
+  document.getElementById("f-area").value = r.area || AREAS[0];
+  document.getElementById("f-remarks").value = r.remarks || "";
+  document.getElementById("f-editid").value = r.id;
+  showScreen("entry");
+  toast("✏ Editing record");
+}
+function deleteRecord(id) {
+  if (!confirm("Delete this certification record?")) return;
+  const rec = records.find(r => r.id === id);
+  records = records.filter(r => r.id !== id);
+  save(); renderAll(); toast("🗑 Record deleted");
+  if (spEnabled() && rec && rec.spId) {
+    spDelete(rec.spId).catch(e => toast("SharePoint delete failed: " + (e && e.message ? e.message : e)));
+  }
+}
+
+/* ---------- Rendering ---------- */
+let mineFilterEmp = "";
+
+function renderMine() {
+  const body = document.getElementById("mine-body");
+  let rows = records;
+  if (mineFilterEmp) rows = rows.filter(r => r.emp === mineFilterEmp);
+  updateMineStatus(rows.length);
+  if (!rows.length) {
+    const msg = mineFilterEmp
+      ? `No records found for Emp ${esc(mineFilterEmp)}.`
+      : `No certifications yet. Click “Add Certification”.`;
+    body.innerHTML = `<tr><td colspan="9" class="empty">${msg}</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.emp)||"—"}</td>
+      <td>${esc(r.name)||"—"}</td>
+      <td>${esc(r.cert)}</td>
+      <td><span class="badge ${badgeClass(r.status)}">${esc(r.status)}</span></td>
+      <td>${fmtDate(r.planned)}</td>
+      <td>${fmtDate(r.completion)}</td>
+      <td>${esc(r.area)||"—"}</td>
+      <td>${esc(r.remarks)||"—"}</td>
+      <td class="actions">
+        <button class="btn ghost sm" onclick="editRecord('${r.id}')">Edit</button>
+        <button class="btn danger-ghost sm" onclick="deleteRecord('${r.id}')">Delete</button>
+      </td>
+    </tr>`).join("");
+}
+function updateMineStatus(count) {
+  const el = document.getElementById("mine-status");
+  const btn = document.getElementById("mine-filter");
+  if (mineFilterEmp) {
+    if (el) { el.innerHTML = `Filtered by Emp <b>${esc(mineFilterEmp)}</b> — ${count} record(s). Click <b>Show all</b> to clear.`; el.style.color = "var(--brand-dark)"; }
+    if (btn) btn.classList.add("active-filter");
+  } else {
+    if (el) { el.textContent = `Showing all records (${count}).`; el.style.color = "var(--muted)"; }
+    if (btn) btn.classList.remove("active-filter");
+  }
+}
+function applyMineFilter() {
+  const v = document.getElementById("mine-emp").value.trim();
+  if (!v) { toast("⚠ Enter an Emp ID to filter"); return; }
+  mineFilterEmp = v;
+  renderMine();
+}
+document.getElementById("mine-filter").addEventListener("click", applyMineFilter);
+document.getElementById("mine-emp").addEventListener("keydown", e => { if (e.key === "Enter") applyMineFilter(); });
+document.getElementById("mine-clear").addEventListener("click", () => {
+  mineFilterEmp = ""; document.getElementById("mine-emp").value = ""; renderMine();
+});
+
+function managerFiltered() {
+  const q = document.getElementById("mgr-search").value.toLowerCase();
+  const team = document.getElementById("mgr-team").value;
+  const jl = document.getElementById("mgr-jl").value;
+  const st = document.getElementById("mgr-status").value;
+  const ct = document.getElementById("mgr-cert").value;
+  return records.filter(r =>
+    (!q || (r.name+r.emp+r.remarks).toLowerCase().includes(q)) &&
+    (!team || r.team === team) &&
+    (!jl || r.jl === jl) &&
+    (!st || r.status === st) &&
+    (!ct || r.cert === ct));
+}
+function renderManager() {
+  // filter options
+  const teams = [...new Set(records.map(r => r.team).filter(Boolean))].sort();
+  const jls = [...new Set(records.map(r => r.jl).filter(Boolean))].sort();
+  syncOptions("mgr-team", teams, "All Teams");
+  syncOptions("mgr-jl", jls, "All JL");
+  syncOptions("mgr-status", STATUSES, "All Status");
+  syncOptions("mgr-cert", CERTIFICATIONS, "All Certifications");
+
+  const rows = managerFiltered();
+  document.getElementById("m-emp").textContent = new Set(rows.map(r => r.emp)).size;
+  document.getElementById("m-cert").textContent = rows.filter(r => r.status === "Certified").length;
+  document.getElementById("m-plan").textContent = rows.filter(r => r.status === "Planned").length;
+  document.getElementById("m-yet").textContent = rows.filter(r => r.status === "Yet to Plan").length;
+
+  const body = document.getElementById("mgr-body");
+  if (!rows.length) { body.innerHTML = `<tr><td colspan="10" class="empty">No records match the filters.</td></tr>`; return; }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.emp)}</td><td>${esc(r.name)}</td><td>${esc(r.jl)||"—"}</td><td>${esc(r.team)||"—"}</td>
+      <td>${esc(r.cert)}</td>
+      <td><span class="badge ${badgeClass(r.status)}">${esc(r.status)}</span></td>
+      <td>${fmtDate(r.planned)}</td><td>${fmtDate(r.completion)}</td><td>${esc(r.area)||"—"}</td>
+      <td class="actions">
+        <button class="btn ghost sm" onclick="editRecord('${r.id}')">Edit</button>
+        <button class="btn danger-ghost sm" onclick="deleteRecord('${r.id}')">Delete</button>
+      </td>
+    </tr>`).join("");
+}
+function syncOptions(id, items, placeholder) {
+  const el = document.getElementById(id);
+  const cur = el.value;
+  el.innerHTML = `<option value="">${placeholder}</option>` + items.map(i => `<option>${esc(i)}</option>`).join("");
+  if (items.includes(cur)) el.value = cur;
+}
+["mgr-search","mgr-team","mgr-jl","mgr-status","mgr-cert"].forEach(id =>
+  document.getElementById(id).addEventListener("input", renderManager));
+
+// Build per-team stats with per-area breakdown. Returns { teamKey: {total,cert,areas:{area:{total,cert}}} }.
+function buildTeamStats(rows) {
+  const teams = {};
+  rows.forEach(r => {
+    const t = r.team || "Unassigned";
+    const a = r.area || "Other";
+    teams[t] = teams[t] || { total: 0, cert: 0, areas: {} };
+    teams[t].total++;
+    teams[t].areas[a] = teams[t].areas[a] || { total: 0, cert: 0 };
+    teams[t].areas[a].total++;
+    if (r.status === "Certified") { teams[t].cert++; teams[t].areas[a].cert++; }
+  });
+  return teams;
+}
+// Render team total % + indented per-area completion % into a container.
+function renderTeamChart(containerId, rows) {
+  const teams = buildTeamStats(rows);
+  const el = document.getElementById(containerId);
+  const teamKeys = Object.keys(teams).sort();
+  if (!teamKeys.length) { el.innerHTML = `<div class="empty">No data</div>`; return; }
+  el.innerHTML = teamKeys.map(t => {
+    const T = teams[t];
+    const tp = Math.round(T.cert / (T.total || 1) * 100);
+    let out = `<div class="bar-row" style="margin-bottom:6px;">
+      <div class="bar-top"><span style="font-weight:700;">${esc(t)} <span style="font-weight:400;color:var(--muted);">(all areas)</span></span>
+      <span class="cnt">${T.cert}/${T.total} &middot; ${tp}% certified</span></div>
+      <div class="bar-track" style="height:12px;"><div class="bar-fill green" style="width:${tp}%"></div></div></div>`;
+    const areaKeys = Object.keys(T.areas).sort();
+    out += `<div style="margin:4px 0 16px 14px;padding-left:12px;border-left:2px solid var(--line);">` +
+      areaKeys.map(a => {
+        const A = T.areas[a];
+        const ap = Math.round(A.cert / (A.total || 1) * 100);
+        return `<div class="bar-row">
+          <div class="bar-top"><span>${esc(a)}</span><span class="cnt">${A.cert}/${A.total} &middot; ${ap}%</span></div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:${ap}%"></div></div></div>`;
+      }).join("") +
+      `</div>`;
+    return out;
+  }).join("");
+}
+
+// Like bars() but always renders every key (even 0), width scaled to the max value.
+function barsByMax(containerId, dataObj, colorMap) {
+  const el = document.getElementById(containerId);
+  const entries = Object.entries(dataObj);
+  if (!entries.length) { el.innerHTML = `<div class="empty">No data</div>`; return; }
+  const max = Math.max(1, ...entries.map(([,v]) => v));
+  const totalAll = entries.reduce((a,[,v]) => a+v, 0) || 1;
+  el.innerHTML = entries.map(([k,v]) => {
+    const w = Math.round(v / max * 100);
+    const pct = Math.round(v / totalAll * 100);
+    const color = colorMap ? (colorMap[k]||"") : "";
+    return `<div class="bar-row">
+      <div class="bar-top"><span>${esc(k)}</span><span class="cnt">${v} (${pct}%)</span></div>
+      <div class="bar-track"><div class="bar-fill ${color}" style="width:${w}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function bars(containerId, dataObj, colorMap) {
+  const total = Object.values(dataObj).reduce((a,b)=>a+b,0) || 1;
+  const el = document.getElementById(containerId);
+  const entries = Object.entries(dataObj);
+  if (!entries.length) { el.innerHTML = `<div class="empty">No data</div>`; return; }
+  el.innerHTML = entries.map(([k,v]) => {
+    const pct = Math.round(v/total*100);
+    const color = colorMap ? (colorMap[k]||"") : "";
+    return `<div class="bar-row">
+      <div class="bar-top"><span>${esc(k)}</span><span class="cnt">${v} (${pct}%)</span></div>
+      <div class="bar-track"><div class="bar-fill ${color}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderHome() {
+  const certified = records.filter(r => r.status === "Certified").length;
+  const planned = records.filter(r => r.status === "Planned").length;
+  const yet = records.filter(r => r.status === "Yet to Plan").length;
+  document.getElementById("t-certified").textContent = certified;
+  document.getElementById("t-planned").textContent = planned;
+  document.getElementById("t-yet").textContent = yet;
+  document.getElementById("t-total").textContent = records.length;
+
+  const statusCount = {};
+  STATUSES.forEach(s => { statusCount[s] = records.filter(r => r.status === s).length; });
+  // Count-based bars so 0-count statuses still show a labelled (empty) row.
+  barsByMax("chart-status", statusCount, { "Certified":"green","Planned":"blue","Yet to Plan":"gray","Not Passed":"amber","Rescheduled":"amber" });
+
+  const certCount = {};
+  records.forEach(r => certCount[r.cert] = (certCount[r.cert]||0)+1);
+  bars("chart-cert", certCount);
+
+  // Team completion: overall % per team, then per-Area completion % within each team.
+  renderTeamChart("chart-team", records);
+}
+
+function renderLeadership() {
+  const total = records.length || 1;
+  const emp = new Set(records.map(r => r.emp)).size;
+  const certified = records.filter(r => r.status === "Certified").length;
+  const planned = records.filter(r => r.status === "Planned").length;
+  const yet = records.filter(r => r.status === "Yet to Plan").length;
+  document.getElementById("l-emp").textContent = emp;
+  document.getElementById("l-total").textContent = records.length;
+  document.getElementById("l-cert").textContent = Math.round(certified/total*100) + "%";
+  document.getElementById("l-plan").textContent = Math.round(planned/total*100) + "%";
+  document.getElementById("l-yet").textContent = Math.round(yet/total*100) + "%";
+
+  // Team-wise adoption: overall % per team, then per-Area completion % within each team.
+  renderTeamChart("l-chart-team", records);
+
+  const certCount = {}; records.forEach(r => certCount[r.cert]=(certCount[r.cert]||0)+1);
+  bars("l-chart-cert", certCount);
+
+  // top certified employees
+  const perEmp = {};
+  records.filter(r => r.status === "Certified").forEach(r => {
+    perEmp[r.name] = (perEmp[r.name]||0)+1;
+  });
+  const top = Object.entries(perEmp).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  document.getElementById("l-top").innerHTML = top.length
+    ? top.map(([n,c]) => `<li><span>${esc(n)}</span><span class="count">${c} ✓</span></li>`).join("")
+    : `<li class="empty" style="justify-content:center">No certified employees yet</li>`;
+
+  // pending certifications
+  const pending = records.filter(r => r.status !== "Certified")
+    .sort((a,b) => (a.planned||"9999").localeCompare(b.planned||"9999")).slice(0,8);
+  document.getElementById("l-pending").innerHTML = pending.length
+    ? pending.map(r => `<li><span>${esc(r.name)} — ${esc(r.cert)}</span><span class="count" style="color:var(--amber)">${esc(r.status)}</span></li>`).join("")
+    : `<li class="empty" style="justify-content:center">Nothing pending 🎉</li>`;
+}
+
+function renderAll() {
+  renderHome(); renderMine(); renderManager(); renderLeadership();
+}
+
+/* ---------- Export ---------- */
+function exportCSV() {
+  const rows = managerFiltered();
+  if (!rows.length) { toast("Nothing to export"); return; }
+  const headers = ["Sl.","Emp#","Name","JL","Account/Team","Manager","AI External Certification","Status","Planned Date","Completion Date","Area","Remarks"];
+  const lines = [headers.join(",")];
+  rows.forEach((r,i) => {
+    const cells = [i+1, r.emp, r.name, r.jl, r.team, r.mgr, r.cert, r.status, r.planned, r.completion, r.area, r.remarks]
+      .map(c => `"${String(c==null?"":c).replace(/"/g,'""')}"`);
+    lines.push(cells.join(","));
+  });
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type:"text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "AI_External_Certification_Tracker_" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("⬇ Exported " + rows.length + " rows (opens in Excel)");
+}
+document.getElementById("mgr-export").addEventListener("click", exportCSV);
+
+document.getElementById("mgr-remind").addEventListener("click", () => {
+  const pending = managerFiltered().filter(r => r.status !== "Certified");
+  if (!pending.length) { toast("No pending certifications to remind"); return; }
+  const emails = pending.map(r => `${r.name} (${r.emp}) — ${r.cert}`).join("\n");
+  alert("📧 Reminder (prototype)\n\nIn the production build this triggers Power Automate emails.\n\nWould remind " + pending.length + " pending record(s):\n\n" + emails);
+});
+
+/* ====================================================================
+   BULK UPLOAD
+   ==================================================================== */
+
+/* ---- Delimited parser: handles CSV + TSV, quoted cells, embedded newlines ---- */
+function parseDelimited(text) {
+  text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  // Decide delimiter: prefer TAB (Excel paste), else comma
+  const firstLine = text.split("\n")[0] || "";
+  const delim = firstLine.includes("\t") ? "\t" : ",";
+  const rows = [];
+  let row = [], cell = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { cell += '"'; i++; }
+        else inQuotes = false;
+      } else cell += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === delim) { row.push(cell); cell = ""; }
+      else if (ch === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += ch;
+    }
+  }
+  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+  // drop fully-empty rows
+  return rows.filter(r => r.some(c => String(c).trim() !== ""));
+}
+
+/* ---- Date normalizer: many messy formats -> YYYY-MM-DD (or "") ---- */
+const MONTHS = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,sept:8,oct:9,nov:10,dec:11,
+  january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11 };
+
+function excelSerialToISO(n) {
+  // Excel epoch: serial 1 = 1900-01-01, with the well-known 1900 leap-year bug.
+  const ms = (n - 25569) * 86400 * 1000; // 25569 = days between 1899-12-30 and 1970-01-01
+  const d = new Date(ms);
+  if (isNaN(d)) return "";
+  return d.toISOString().slice(0, 10);
+}
+function pad2(n) { return String(n).padStart(2, "0"); }
+function isoOf(y, m, d) {
+  const dt = new Date(Date.UTC(y, m, d));
+  if (isNaN(dt)) return "";
+  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
+}
+
+function normalizeDate(raw) {
+  if (raw == null) return "";
+  let s = String(raw).trim();
+  if (!s) return "";
+  // Excel "zero date" / invalid -> treat as blank
+  if (s === "1/0/1900" || s === "0/0/0000" || /^1900-01-0[01]$/.test(s)) return "";
+
+  // Pure Excel serial number (e.g. 46295)
+  if (/^\d{4,6}$/.test(s)) {
+    const n = parseInt(s, 10);
+    if (n > 20000 && n < 90000) return excelSerialToISO(n);
+  }
+
+  // Ordinal / text dates like "12th September", "26th September 2026"
+  const ord = s.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]+)(?:\s+(\d{4}))?$/);
+  if (ord) {
+    const mo = MONTHS[ord[2].toLowerCase()];
+    if (mo != null) return isoOf(ord[3] ? +ord[3] : 2026, mo, +ord[1]);
+  }
+  // "September 12", "September 2026", or bare month "September"
+  const mfirst = s.match(/^([A-Za-z]+)\s*(\d{1,2})?(?:,?\s*(\d{4}))?$/);
+  if (mfirst && MONTHS[mfirst[1].toLowerCase()] != null) {
+    const mo = MONTHS[mfirst[1].toLowerCase()];
+    const day = mfirst[2] ? +mfirst[2] : 1; // bare month -> 1st
+    return isoOf(mfirst[3] ? +mfirst[3] : 2026, mo, day);
+  }
+
+  // DD-MM-YYYY or DD/MM/YYYY with 2-digit lead and 4-digit year  (e.g. 30-08-2026, 14-09-2026)
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) {
+    let a = +m[1], b = +m[2], y = +m[3];
+    // If first part > 12 it must be a day -> DD-MM-YYYY. If separator is "-" assume DD-MM-YYYY.
+    if (s.includes("-") || a > 12) {
+      return isoOf(y, b - 1, a);
+    }
+    // slash form: treat as M/D/YYYY (US / Excel default)
+    return isoOf(y, a - 1, b);
+  }
+  // YYYY-MM-DD already
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Fallback: let Date try
+  const d = new Date(s);
+  if (!isNaN(d) && d.getFullYear() > 1901) return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  return "";
+}
+
+/* ---- Certification name normalizer -> canonical list (or trimmed free text) ---- */
+function normalizeCert(raw) {
+  let s = String(raw || "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  const low = s.toLowerCase();
+  // Canonical Claude certs (handle en-dash / hyphen / spacing variants)
+  if (/claude.*associate/.test(low)) return "Claude Certified Associate – Foundations";
+  if (/claude.*developer/.test(low)) return "Claude Certified Developer – Foundations";
+  if (/claude.*architect.*professional/.test(low)) return "Claude Certified Architect – Professional";
+  if (/claude.*architect/.test(low)) return "Claude Certified Architect – Foundations";
+  if (/claude.*architect.*expert/.test(low)) return "Claude Certified Architect – Expert";
+  if (/salesforce.*ai associate/.test(low) || /salesforce certified ai/.test(low)) return "Salesforce AI Associate";
+  if (/amazon ai practitioner/.test(low) || /amazon.*practitioner/.test(low)) return "Amazon AI Practitioner";
+  if (/aws agentic/.test(low)) return "AWS Agentic AI Essentials";
+  if (/oracle cloud.*ai|oci ai|1z0-1122/.test(low)) return "OCI AI Foundation";
+  if (/git ?hub co-?pilot|github copilot/.test(low)) return "GitHub Copilot";
+  // Otherwise keep the cleaned original (free-text / "Planning to take…", etc.)
+  return s;
+}
+
+/* ---- Status cleaner -> known status ---- */
+function normalizeStatus(raw) {
+  let s = String(raw || "").trim();
+  if (!s) return "";
+  const low = s.toLowerCase();
+  if (low.startsWith("certif")) return "Certified";
+  if (low.startsWith("plan")) return "Planned";
+  if (low.includes("resched")) return "Rescheduled";
+  if (low.includes("not pass") || low.includes("fail")) return "Not Passed";
+  if (low.includes("no show") || low.includes("no-show") || low.includes("noshow") || low.includes("did not attend") || low.includes("absent")) return "No Show";
+  if (low.includes("yet")) return "Yet to Plan";
+  return s;
+}
+
+/* ---- Build a normalized record from a raw row + defaults ---- */
+function buildRowFromRaw(cols, defaults) {
+  // Expected order: Sl., Emp#, Name, JL, Team, Manager, Cert, Status, Planned, Completion, Area, Remarks
+  const get = i => (cols[i] == null ? "" : String(cols[i]).replace(/\s+/g, " ").trim());
+  const emp = get(1);
+  const name = get(2);
+  const jl = get(3) || defaults.jl;
+  const team = get(4) || defaults.team;
+  const mgr = get(5) || defaults.mgr;
+  const cert = normalizeCert(get(6));
+  let status = normalizeStatus(get(7));
+  const planned = normalizeDate(cols[8]);
+  const completion = normalizeDate(cols[9]);
+  let area = get(10) || defaults.area;
+  const remarks = get(11) || defaults.remarks;
+
+  // Recompute status from dates when sensible (completion wins)
+  status = autoStatus(planned, completion, status) || status || "Yet to Plan";
+
+  return { emp, name, jl, team, mgr, cert, status, planned, completion, area, remarks };
+}
+
+/* ---- Detect whether first row is a header ---- */
+function looksLikeHeader(cols) {
+  const joined = cols.join(" ").toLowerCase();
+  return /emp\s*#|employee|certification|status|planned|completion/.test(joined) && /name/.test(joined);
+}
+
+let bulkParsed = [];   // array of { rec, warnings }
+
+function currentDefaults() {
+  return {
+    jl: document.getElementById("def-jl").value.trim(),
+    team: document.getElementById("def-team").value.trim(),
+    mgr: document.getElementById("def-mgr").value.trim(),
+    area: document.getElementById("def-area").value.trim(),
+    remarks: document.getElementById("def-remarks").value.trim(),
+  };
+}
+
+function parseBulk() {
+  const text = document.getElementById("bulk-text").value;
+  if (!text.trim()) { toast("⚠ Nothing to parse — paste data or pick a file"); return; }
+  const rows = parseDelimited(text);
+  if (!rows.length) { toast("⚠ No rows found"); return; }
+  if (looksLikeHeader(rows[0])) rows.shift();
+
+  const defaults = currentDefaults();
+  bulkParsed = rows.map(cols => {
+    const rec = buildRowFromRaw(cols, defaults);
+    const warnings = [];
+    if (!rec.emp) warnings.push("missing Emp#");
+    if (!rec.name) warnings.push("missing Name");
+    if (!rec.cert) warnings.push("missing Certification");
+    if (!CERTIFICATIONS.includes(rec.cert) && rec.cert) warnings.push("free-text cert → kept as \"Other\"-style");
+    return { rec, warnings };
+  });
+
+  document.getElementById("bulk-options-card").style.display = "";
+  renderBulkPreview();
+}
+
+function renderBulkPreview() {
+  const card = document.getElementById("bulk-preview-card");
+  card.style.display = "";
+  const valid = bulkParsed.filter(p => p.rec.emp && p.rec.name && p.rec.cert);
+  const invalid = bulkParsed.length - valid.length;
+
+  document.getElementById("bulk-count").textContent =
+    `— ${bulkParsed.length} parsed, ${valid.length} valid` + (invalid ? `, ${invalid} skipped` : "");
+  document.getElementById("bulk-import-n").textContent = valid.length;
+
+  const warnCount = bulkParsed.filter(p => p.warnings.length).length;
+  const wbox = document.getElementById("bulk-warnings");
+  if (invalid || warnCount) {
+    wbox.innerHTML = `<div class="note" style="background:#fef3c7;border-color:#fde68a;color:#92400e;">
+      ⚠ ${invalid} row(s) will be skipped (missing Emp#/Name/Certification). ${warnCount} row(s) had values that were auto-cleaned (dates, cert names, status). Review the preview below.</div>`;
+  } else {
+    wbox.innerHTML = `<div class="note" style="background:var(--green-bg);border-color:#bbf7d0;color:#166534;">✅ All rows look good.</div>`;
+  }
+
+  const body = document.getElementById("bulk-body");
+  body.innerHTML = bulkParsed.map((p, i) => {
+    const r = p.rec;
+    const bad = !(r.emp && r.name && r.cert);
+    return `<tr style="${bad ? 'background:#fef2f2;' : ''}">
+      <td>${i + 1}</td>
+      <td>${esc(r.emp) || '<span style="color:var(--red)">—</span>'}</td>
+      <td>${esc(r.name) || '<span style="color:var(--red)">—</span>'}</td>
+      <td>${esc(r.jl)}</td>
+      <td>${esc(r.team)}</td>
+      <td>${esc(r.cert) || '<span style="color:var(--red)">—</span>'}</td>
+      <td><span class="badge ${badgeClass(r.status)}">${esc(r.status)}</span></td>
+      <td>${fmtDate(r.planned)}</td>
+      <td>${fmtDate(r.completion)}</td>
+      <td>${esc(r.area)}</td>
+      <td>${esc(r.remarks) || "—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function importBulk() {
+  const valid = bulkParsed.filter(p => p.rec.emp && p.rec.name && p.rec.cert).map(p => p.rec);
+  if (!valid.length) { toast("⚠ No valid rows to import"); return; }
+  const replace = document.getElementById("bulk-replace").checked;
+  if (replace && !confirm(`Replace ALL ${records.length} existing record(s) with ${valid.length} imported row(s)? This cannot be undone.`)) return;
+
+  const additions = valid.map(r => ({ id: uid(), ...r }));
+  if (replace) {
+    records = additions;
+    save(); renderAll();
+    toast(`✅ Imported ${additions.length} record(s)`);
+  } else {
+    const { merged, added, updated, kept } = await mergeNoDuplicates(records, additions);
+    records = merged;
+    save(); renderAll();
+    toast(`✅ Imported: ${added} added, ${updated} updated${kept ? ", " + kept + " kept existing" : ""} (no duplicates)`);
+  }
+  // reset bulk UI
+  bulkParsed = [];
+  document.getElementById("bulk-text").value = "";
+  document.getElementById("bulk-file").value = "";
+  document.getElementById("bulk-filename").textContent = "";
+  document.getElementById("bulk-preview-card").style.display = "none";
+  document.getElementById("bulk-options-card").style.display = "none";
+  showScreen("manager");
+}
+
+/* ---- SharePoint backend wiring ---- */
+(function initSpUI(){
+  const s = document.getElementById("sp-site"), l = document.getElementById("sp-list"), e = document.getElementById("sp-enabled");
+  if (s) s.value = spCfg.site || "";
+  if (l) l.value = spCfg.list || "AI_External_Certifications";
+  if (e) e.checked = !!spCfg.enabled;
+  if (spEnabled()) setSpStatus("SharePoint backend is ON. Site: " + spCfg.site + " · List: " + spCfg.list, "ok");
+})();
+document.getElementById("sp-save").addEventListener("click", () => {
+  spCfg.site = document.getElementById("sp-site").value.trim().replace(/\/+$/, "");
+  spCfg.list = document.getElementById("sp-list").value.trim() || "AI_External_Certifications";
+  spCfg.enabled = document.getElementById("sp-enabled").checked;
+  saveSpCfg();
+  if (spEnabled()) { setSpStatus("Saved. Loading from SharePoint…", "ok"); spReloadFromServer(); }
+  else setSpStatus("Saved. SharePoint backend is OFF (using built-in data).", null);
+});
+document.getElementById("sp-reload").addEventListener("click", spReloadFromServer);
+document.getElementById("sp-test").addEventListener("click", async () => {
+  if (!spCfg.site) { setSpStatus("Enter the Site URL first.", "err"); return; }
+  setSpStatus("Testing connection…");
+  try {
+    const d = await spGetDigest();
+    setSpStatus("Connection OK — authenticated to " + spCfg.site, "ok");
+  } catch (err) {
+    setSpStatus("Connection failed: " + (err && err.message ? err.message : err) + " (host the page on the SharePoint site for auth).", "err");
+  }
+});
+
+/* ---- Cloud sync wiring ---- */
+(function initCloudUI(){
+  const urlInput = document.getElementById("cloud-url");
+  if (urlInput) urlInput.value = getCloudUrl();
+  const pullInput = document.getElementById("cloud-pull-url");
+  if (pullInput) pullInput.value = getPullUrl();
+  const saved = getCloudUrl();
+  if (saved) setCloudStatus("Cloud sync configured. Auto-push is on by default.", "ok");
+})();
+document.getElementById("cloud-save-url").addEventListener("click", () => {
+  const v = document.getElementById("cloud-url").value.trim();
+  const pv = document.getElementById("cloud-pull-url").value.trim();
+  try { localStorage.setItem(CLOUD_URL_KEY, v); localStorage.setItem(CLOUD_PULL_KEY, pv); } catch {}
+  setCloudStatus(v ? "URL saved. Auto-push enabled." : "URL cleared. Cloud sync off.", v ? "ok" : null);
+});
+document.getElementById("cloud-show-url").addEventListener("click", () => {
+  const i = document.getElementById("cloud-url");
+  i.type = i.type === "password" ? "text" : "password";
+});
+document.getElementById("cloud-push").addEventListener("click", () => pushToCloud(false));
+document.getElementById("cloud-pull").addEventListener("click", pullFromCloud);
+
+/* ---- Data file (JSON) wiring ---- */
+document.getElementById("data-save").addEventListener("click", saveToFile);
+document.getElementById("data-load").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) loadFromFile(f, { replace: true });
+  e.target.value = "";
+});
+document.getElementById("data-merge").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) loadFromFile(f, { replace: false });
+  e.target.value = "";
+});
+document.getElementById("data-bake").addEventListener("click", exportRecordsJson);
+document.getElementById("data-validate").addEventListener("click", validateDuplicates);
+
+/* ---- Bulk event wiring ---- */
+document.getElementById("bulk-preview").addEventListener("click", parseBulk);
+document.getElementById("bulk-reapply").addEventListener("click", parseBulk);
+document.getElementById("bulk-clear").addEventListener("click", () => {
+  document.getElementById("bulk-text").value = "";
+  document.getElementById("bulk-file").value = "";
+  document.getElementById("bulk-filename").textContent = "";
+  bulkParsed = [];
+  document.getElementById("bulk-preview-card").style.display = "none";
+  document.getElementById("bulk-options-card").style.display = "none";
+});
+document.getElementById("bulk-import").addEventListener("click", importBulk);
+document.getElementById("bulk-file").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById("bulk-filename").textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => { document.getElementById("bulk-text").value = ev.target.result; parseBulk(); };
+  reader.readAsText(file);
+});
+
+/* ---------- Init ---------- */
+fillSelect(document.getElementById("f-cert"), CERTIFICATIONS, "— select —");
+fillSelect(document.getElementById("f-status"), STATUSES);
+fillSelect(document.getElementById("f-area"), AREAS, "— select —");
+document.getElementById("f-status").value = "Yet to Plan";
+document.getElementById("welcomeName").textContent = "Welcome";
+initData().then(() => { renderAll(); renderFileInfo(); });
+</script>
+</body>
+</html>
