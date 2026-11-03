@@ -453,6 +453,7 @@
         <select id="mgr-cert"><option value="">All Certifications</option></select>
         <div class="spacer"></div>
         <button class="btn success sm" id="mgr-export">⬇ Export to Excel</button>
+        <button class="btn ghost sm" id="mgr-export-nc">⚠ Not-Certified Report</button>
         <button class="btn ghost sm" id="mgr-remind">✉ Send Reminder</button>
       </div>
       <div class="table-wrap">
@@ -1607,6 +1608,51 @@ function exportCSV() {
   toast("⬇ Exported " + rows.length + " rows (opens in Excel)");
 }
 document.getElementById("mgr-export").addEventListener("click", exportCSV);
+
+/* ---- Report: employees with ZERO certified certifications ---- */
+function exportNotCertified() {
+  // Respect the active Manager View filters, then group by Emp#.
+  const rows = managerFiltered();
+  const byEmp = {};
+  rows.forEach(r => {
+    const k = (r.emp || "").trim();
+    if (!k) return;
+    (byEmp[k] = byEmp[k] || []).push(r);
+  });
+  // An employee qualifies if NONE of their records are "Certified".
+  const out = [];
+  Object.keys(byEmp).forEach(emp => {
+    const recs = byEmp[emp];
+    const anyCertified = recs.some(r => (r.status || "").trim() === "Certified");
+    if (!anyCertified) {
+      const first = recs[0];
+      const certs = recs.map(r => r.cert).filter(Boolean).join(" | ");
+      const statuses = [...new Set(recs.map(r => (r.status || "").trim()).filter(Boolean))].join(" | ");
+      out.push({
+        emp, name: first.name || "", jl: first.jl || "", team: first.team || "",
+        mgr: first.mgr || "", area: first.area || "", count: recs.length,
+        certs, statuses
+      });
+    }
+  });
+  if (!out.length) { toast("Everyone in view has at least one certification."); return; }
+  out.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
+  const headers = ["Sl.","Emp#","Name","JL","Account/Team","Manager","Area","# Records","Certifications (none certified)","Statuses"];
+  const lines = [headers.join(",")];
+  out.forEach((r,i) => {
+    const cells = [i+1, r.emp, r.name, r.jl, r.team, r.mgr, r.area, r.count, r.certs, r.statuses]
+      .map(c => `"${String(c==null?"":c).replace(/"/g,'""')}"`);
+    lines.push(cells.join(","));
+  });
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type:"text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Not_Certified_Report_" + new Date().toISOString().slice(0,10) + ".csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("\u26a0 Exported " + out.length + " employee(s) with no certification.");
+}
+document.getElementById("mgr-export-nc").addEventListener("click", exportNotCertified);
 
 document.getElementById("mgr-remind").addEventListener("click", () => {
   const pending = managerFiltered().filter(r => r.status !== "Certified");
